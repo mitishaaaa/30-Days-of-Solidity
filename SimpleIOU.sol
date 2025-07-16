@@ -55,17 +55,35 @@ contract SimpleIOU{
     }
     
     // Pay off debt using internal balance transfer
-    function payFromWallet(address _creditor, uint256 _amount) public onlyRegistered {
+
+    function payFromWallet(address _creditor, uint256 _amount) public onlyRegistered {  //creditor = you owe money to, amount = how much you're paying
+        //Validations
+
         require(_creditor != address(0), "Invalid address");
+        //Prevents sending money to zero address
+
         require(registeredFriends[_creditor], "Creditor not registered");
+        //Makes sure ur only  interacting with registered
+
         require(_amount > 0, "Amount must be greater than 0");
+        // no zero or negative numbers
+
         require(debts[msg.sender][_creditor] >= _amount, "Debt amount incorrect");
+        // checks you're not paying more than you owe
+
         require(balances[msg.sender] >= _amount, "Insufficient balance");
+        // checks if you have enough money to pay
         
-        // Update balances and debt
+        // ACTUAL LOGIC
         balances[msg.sender] -= _amount;
+        // Deducts the amount from your wallet
+
         balances[_creditor] += _amount;
+        // Credits to the creditor
+
         debts[msg.sender][_creditor] -= _amount;
+        // Updates your debt record
+
     }
     
     // Direct transfer method using transfer()
