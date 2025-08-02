@@ -41,15 +41,78 @@ contract VaultManager{
  }
 
 
- function nameBox(address boxAddress, string calldata name) external{
-    /* box address is a function parameter
-     when nameBox is called, owner must pass the address of the box they want to name(boxAddress)
-     the nickname they want to give(name) */
+ function nameBox(address boxAddress, string calldata name) external{ 
+       /* this function lets user give a nickname to one of their deposit boxes:
+       it take two inputs: boxAddress - the address of the deposit box contract the user wants to name
+       name - the nickname the user wants to asasign 
+       it treats the given address(boxAddress) as a contract that follows the IDepositBox interface. */
     IDepositBox box = IDepositBox(boxAddress);
-    // it treats the given address (boxAddress) as a contract that follows IDepositBox interface
+       // it treats the given address (boxAddress) as a contract that follows IDepositBox interface
     require(box.getOwner() == msg.sender, "Not the box owner");
-    // This checks that the caller of this function (msg.sender) is the actual owner of that box.
+       // This checks that the caller of this function (msg.sender) is the actual owner of that box.
 
     boxNames[boxAddress] = name; //This saves the nickname in a mapping.
     emit BoxNamed(boxAddress, name);
  }
+  
+ function storeSecret(address boxAddress, string calldata secret) external{
+    /* address boxAddress: the address of the box you want to store the secret in.
+      string calldata secret: the secret message (a string) you want to store.
+      external: means this function is meant to be called from outside, like from a frontend or another contract.
+   */
+    IDepositBox box = IDepositBox(boxAddress);
+    require(box.getOwner() == msg.sender, "Not the owner");
+
+    box.storeSecret(secret);
+ }
+ 
+ function transferBoxOwnership(address boxAddress, address newOwner) external{
+   
+   IDepositBox box = IDepositBox(boxAddress);
+   //turn the given address(boxAddress) into a usable contract, using the IDepositBox interface
+   
+   require(box.getOwner() == msg.sender,"Not the box owenr");
+
+   box.transferOwnership(newOwner);
+
+   address[] storage boxes = userDepositBoxes[msg.sender];
+   for (uint i = 0; i < boxes.length; i++){ // Loop through each box you own
+      if (boxes[i] == boxAddress){  // If this is the one being transferred...
+         boxes[i] = boxes[boxes.length - 1]; // Replace it with the last one
+         boxes.pop(); // Remove the last one (now duplicated)
+         break; // Stop looping since we’re done
+      }
+   }
+
+   // Add box to new owner
+   userDepositBoxes[newOwner].push(boxAddress);
+ } 
+
+
+ function getUserBoxes(address user) external view returns (address[] memory){
+   return userDepositBoxes[user];
+ }
+
+ function getBoxName(address boxAddress) external view returns (string memory){
+   return boxNames[boxAddress];
+ }
+
+ function getBoxInfo(address boxAddress) external view returns(
+   string memory boxType,
+   address owner,
+   uint256 depositTime,
+   string memory name
+ )
+ 
+ {
+   IDepositBox box = IDepositBox(boxAddress);
+   return(
+      box.getBoxType(),
+      box.getOwner(),
+      box.getDepositTime(),
+      boxNames[boxAddress]
+   );
+ }
+}
+
+ 
